@@ -1,0 +1,45 @@
+@model ASP_P42.Models.Home.Models.HomeModelsViewModel
+
+@{
+    ViewData["Title"] = "Models";
+}
+
+<div class="text-center page-title">
+    <h1 class="display-4">
+        @Model.PageTitle
+    </h1>
+</div>
+
+<p class="intro">@Model.Intro</p>
+
+<p class="classification-header">@Model.ClassificationHeader</p>
+
+<ul class="classification-list">
+    @foreach(var item in Model.ClassificationList)
+    {
+        <li>@item</li>
+    }
+</ul>
+<p class="example-header">@Model.ExampleHeader</p>
+<ul class="example-list">
+    @foreach (var item in Model.ExampleList)
+    {
+        <li>@item</li>
+    }
+</ul>
+
+<form asp-action="ModelsForm" method="post">
+    <div>Login: <input name="user-login" /></div>
+    <div>Password: <input name="user-password" type="password" /></div>
+    <div><label><input type="checkbox" name="subscribe" value="true" /> Підписка</label></div>
+    <div>
+        Стать:
+        <label><input type="radio" name="gender" value="Чоловіча" /> Чоловіча</label>
+        <label><input type="radio" name="gender" value="Жіноча" /> Жіноча</label>
+    </div>
+    <div>Дата народження: <input type="date" name="birth-date" /></div>
+    <div>Улюблений колір: <input type="color" name="favorite-color" /></div>
+    <div>Оцінка: <input type="number" name="score" /></div>
+    <br/>
+    <button>GO</button>
+</form>

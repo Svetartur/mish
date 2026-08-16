@@ -1,0 +1,122 @@
+@{
+    ViewData["Title"] = "Razor";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Синтаксис рушія Razor</h1>
+</div>
+<p>
+    Основу синтаксиса становить символ <b>&commat;</b>, який сам
+    по собі стає службовим і для виведення має бути 
+    замінений на HTML-сутність <b>&amp;commat;</b>.
+    Винятком є правильні адреси електронної пошти 
+    на кшталт user@ukr.net
+</p>
+<h2 class="display-5">Вирази</h2>
+<p>
+    Вирази (у програмуванні) - інструкції, що мають
+    результат. У Razor ще мається на увазі виведення 
+    цього результату, точніше, включення його до HTML.
+</p>
+<p>
+    Вираз формується за допомогою 
+    <code>&commat;()</code>, наприклад,
+    <code>&commat;(2 + 3) = @(2 + 3)</code>
+    <code>&commat;(Math.Sqrt(2)) = @(Math.Sqrt(2))</code>
+    <code>&commat;(String.Join(',', [1,2,3])) = 
+        @(String.Join(',', [1, 2, 3]))</code>
+</p>
+<h2 class="display-5">Операції</h2>
+<p>
+    Інструкції без результатів називають операціями. 
+    Операції задаються блоками <code>&commat;{}</code>,
+    наприклад,
+    <pre>
+&commat;{
+    int x = 10;
+}
+    </pre>
+</p>
+@{
+    int x = 10;
+}
+<p>
+    Для виведення значення змінних є скорочена форма 
+    виразів <code>&commat;x = @x</code>. Повна форма 
+    також актуальна <code>&commat;(x) = @(x)</code>.
+    Слід звертати увагу, оскільки скорочена форма діє 
+    тільки на перший аргумент:<br/>
+    <code>&commat;x+1 = @x+1</code><br />
+    <code>&commat;(x+1) = @(x+1)</code>
+</p>
+
+<h2 class="display-5">Умови</h2>
+<p>
+    Умови формуються оператором <code>&commat;if</code>.
+    Допускаються як скорочена форма, так і повна 
+    <code>&commat;if-else</code>. Особливість полягає 
+    у тому, що фігурні дужки необхідні навіть для 
+    одиночних інструкцій. 
+</p>
+@if(x % 2 == 0)
+{
+    <p>Значення змінної х є парним</p>
+}
+
+@if (x % 3 == 0)
+{
+    <p>Значення змінної х ділиться на 3 без залишку</p>
+}
+else
+{
+    <p>Значення змінної х HE ділиться на 3 без залишку</p>
+}
+
+<h2 class="display-5">Цикли</h2>
+<p>
+    Підтримуються всі форми циклів: <code>
+    &commat;for, 
+    &commat;while, 
+    &commat;do-while, 
+    &commat;foreach
+    </code>
+</p>
+<ul>
+    @for (int i = 0; i < 10; i++)
+    {
+        if (i % 2 == 0)
+        {
+            <li>Item No @(i + 1)</li>
+        }
+    }
+</ul>
+
+@{
+    var products = new[]
+    {
+        new { Name = "Ноутбук", Price = 25000 },
+        new { Name = "Мишка", Price = 500 },
+        new { Name = "Клавіатура", Price = 1200 },
+        new { Name = "Монітор", Price = 8000 }
+    };
+}
+
+<table class="table border mt-3">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Назва товару</th>
+            <th>Ціна</th>
+        </tr>
+    </thead>
+    <tbody>
+        @for (int i = 0; i < products.Length; i++)
+        {
+            <tr style="background-color: @(i % 2 == 0 ? "#f8f9fa" : "#ffffff");">
+                <td>@(i + 1)</td>
+                <td>@products[i].Name</td>
+                <td>@products[i].Price грн</td>
+            </tr>
+        }
+    </tbody>
+</table>
