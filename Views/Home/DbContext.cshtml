@@ -1,0 +1,60 @@
+@{
+    ViewData["Title"] = "Entity Framework & DB";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Підключення бази даних з Entity Framework</h1>
+</div>
+
+<h2 class="display-5">Термінологія БД та Entity Framework</h2>
+<p>
+    <b>ORM (Object-Relational Mapping)</b> — технологія програмування, яка зв'язує бази даних з концепціями об'єктно-орієнтованих мов програмування.
+</p>
+<p>
+    <b>Entity Framework (EF Core)</b> — ORM-інструмент для .NET, який дозволяє розробникам працювати з банею даних за допомогою об'єктів C# без необхідності написання більшості SQL-запитів.
+</p>
+<p>
+    <b>Entity (Сутність)</b> — C#-клас, що відображає структуру окремої таблиці в базі даних (наприклад, <code>UserData</code>, <code>UserRole</code>, <code>UserAccess</code>).
+</p>
+<p>
+    <b>DbContext (Контекст даних)</b> — головний клас в EF Core, що представляє сесію роботи з базою даних і дозволяє опитувати та зберігати екземпляри сутностей.
+</p>
+<p>
+    <b>DbSet</b> — властивість у класі <code>DbContext</code>, що відповідає окремій таблиці сутностей у базі даних (наприклад, <code>DbSet&lt;UserData&gt;</code>).
+</p>
+<p>
+    <b>Migration (Міграція)</b> — механізм оновлення схеми бази даних у відповідність до змін у моделях C# зі збереженням існуючих даних.
+</p>
+<p>
+    <b>Connection String (Рядок підключення)</b> — конфігураційний рядок з деталями підключення до сервера БД (адреса сервера, ім'я БД, параметри автентифікації).
+</p>
+<p>
+    <b>Seeding (Сідування)</b> — внесення початкових даних до бази даних під час створення або застосування міграцій (наприклад, базові ролі та адміністратор).
+</p>
+
+<h2 class="display-5">Порядок дій для долучення БД до проєкту ASP</h2>
+<ol>
+    <li>
+        <b>Встановлення NuGet-пакетів:</b>
+        <ul>
+            <li><code>Microsoft.EntityFrameworkCore</code> — базовий функціонал ORM.</li>
+            <li><code>Microsoft.EntityFrameworkCore.SqlServer</code> — провайдер для MS SQL Server.</li>
+            <li><code>Microsoft.EntityFrameworkCore.Tools</code> — інструменти консолі для міграцій.</li>
+        </ul>
+    </li>
+    <li>
+        <b>Створення класи-сутностей (Entities):</b> створюємо директорію <code>Data/Entities</code> та класи для таблиць БД.
+    </li>
+    <li>
+        <b>Створення класу контексту даних (DataContext):</b> успадковуємо клас від <code>DbContext</code>, додаємо властивості <code>DbSet</code> та налаштовуємо зв'язки/початкові дані у <code>OnModelCreating</code>.
+    </li>
+    <li>
+        <b>Налаштування рядка підключення:</b> додаємо секцію <code>ConnectionStrings</code> до файлу <code>appsettings.json</code>.
+    </li>
+    <li>
+        <b>Реєстрація сервісу DbContext:</b> у файлі <code>Program.cs</code> викликаємо метод <code>builder.Services.AddDbContext&lt;DataContext&gt;(...)</code>.
+    </li>
+    <li>
+        <b>Створення та застосування міграцій:</b> у Package Manager Console виконуємо команду <code>Add-Migration Name</code> для створення міграції та <code>Update-Database</code> для її застосування до БД.
+    </li>
+</ol>
