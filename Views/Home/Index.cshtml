@@ -1,8 +1,15 @@
-﻿@{
+@{
     ViewData["Title"] = "Home Page";
+    var itemValue = Context.Items["itemKey"] as string;
 }
 
 <div class="text-center">
     <h1 class="display-4">Welcome</h1>
     <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+    @if (!string.IsNullOrEmpty(itemValue))
+    {
+        <div class="alert alert-info mt-3" role="alert">
+            Дані з AuthSessionMiddleware (Context.Items["itemKey"]): <strong>@itemValue</strong>
+        </div>
+    }
 </div>
