@@ -16,4 +16,9 @@
     </PackageReference>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Data\Dump\" />
+    <Folder Include="LocalStorage\" />
+  </ItemGroup>
+
 </Project>

@@ -2,6 +2,7 @@ using ASP_P42.Data;
 using ASP_P42.Middleware.AuthSession;
 using ASP_P42.Services.Hash;
 using ASP_P42.Services.Kdf;
+using ASP_P42.Services.Storage;
 using ASP_P42.Services.Time;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,6 +12,7 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddHash();
 builder.Services.AddKdf();
 builder.Services.AddTime();
+builder.Services.AddStorage();
 
 builder.Services.AddDbContext<DataContext>(options => 
     options.UseSqlServer(

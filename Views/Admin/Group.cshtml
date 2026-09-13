@@ -1,0 +1,61 @@
+@model ASP_P42.Models.Admin.AdminGroupViewModel
+@{
+    ViewData["Title"] = "Admin Page";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Admin Page: Add product group</h1>
+</div>
+
+<form id="admin-add-group" enctype="multipart/form-data" method="post">
+
+    <div class="input-group mb-3">
+        <label class="input-group-text" for="group-parent">Батьківська група</label>
+        <select class="form-select" id="group-parent" name="group-parent">
+            <option selected>Вищій рівень</option>
+            @foreach(var group in Model.Groups)
+            {
+                <option value="@group.Id" title="@group.Description">@group.Name</option>
+            }
+        </select>
+    </div>
+
+    <div class="input-group mb-3">
+        <span class="input-group-text" id="group-name-addon">Назва</span>
+        <input type="text" class="form-control" placeholder="Ім'я товарної групи" 
+               aria-label="Ім'я товарної групи" aria-describedby="group-name-addon"
+               name="group-name" />
+    </div>
+
+    <div class="input-group mb-3">
+        <span class="input-group-text">Опис</span>
+        <textarea class="form-control" name="group-description" aria-label="Опис товарної групи"></textarea>
+    </div>
+
+    <div class="input-group mb-3">
+        <span class="input-group-text" id="group-slug-addon">Назва</span>
+        <input type="text" class="form-control" placeholder="Адреса товарної групи"
+               aria-label="Адреса товарної групи" aria-describedby="group-slug-addon"
+               name="group-slug" />
+    </div>
+
+    <input type="file" class="form-control mb-3" name="group-img" />
+
+    <div class="input-group mb-3">
+        <div class="input-group-text">
+            <input class="form-check-input mt-0" type="checkbox" value="1" 
+                   name="group-hidden" id="group-hidden"
+                   aria-label="Видимість групи">
+        </div>
+        <label for="group-hidden" class="form-control">Створити прихованою</label>
+    </div>
+
+    <div class="input-group mb-3">
+        <span class="input-group-text" id="group-order-addon">Порядок</span>
+        <input type="number" class="form-control" value="@(Model.Groups.Count + 1)" step="1"
+               aria-label="Порядок (пріоритет) групи" aria-describedby="group-order-addon"
+               name="group-order" />
+    </div>
+
+    <button class="btn btn-primary">Add</button>
+</form>

@@ -1,0 +1,81 @@
+@model ASP_P42.Models.Admin.AdminGroupViewModel
+@{
+    ViewData["Title"] = "Admin Page";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Admin Page: Add new product</h1>
+</div>
+
+<form id="admin-add-product" enctype="multipart/form-data" method="post">
+
+    <div class="input-group mb-3">
+        <label class="input-group-text" for="product-group">Група</label>
+        <select class="form-select" id="product-group" name="product-group">
+            @foreach (var group in Model.Groups)
+            {
+                <option value="@group.Id" title="@group.Description">@group.Name</option>
+            }
+        </select>
+    </div>
+
+    <div class="input-group mb-3">
+        <span class="input-group-text" id="product-name-addon">Назва</span>
+        <input type="text" class="form-control" placeholder="Ім'я товару"
+               aria-label="Ім'я товару" aria-describedby="product-name-addon"
+               name="product-name" />
+    </div>
+
+    <div class="input-group mb-3">
+        <span class="input-group-text">Опис</span>
+        <textarea class="form-control" name="product-description" aria-label="Опис товару"></textarea>
+    </div>
+
+    <div class="input-group mb-3">
+        <span class="input-group-text" id="product-slug-addon">Адреса</span>
+        <input type="text" class="form-control" placeholder="Адреса товару"
+               aria-label="Адреса товару" aria-describedby="product-slug-addon"
+               name="product-slug" />
+    </div>
+
+    <input type="file" class="form-control mb-3" name="product-img" />
+
+    <div class="input-group mb-3">
+        <span class="input-group-text" id="product-price-addon">Ціна</span>
+        <input type="number" class="form-control" value="100" step="0.01" min="0.01"
+               aria-label="Ціна товару" aria-describedby="product-price-addon"
+               name="product-price" />
+    </div>
+
+    <div class="input-group mb-3">
+        <span class="input-group-text" id="product-stock-addon">Кількість</span>
+        <input type="number" class="form-control" value="10" step="1" min="-1"
+               aria-label="Кількість товару на складі" aria-describedby="product-stock-addon"
+               name="product-stock" />
+    </div>
+
+    <div class="input-group mb-3">
+        <div class="input-group-text">
+            <input class="form-check-input mt-0" type="checkbox" value="1"
+                   name="product-hidden" id="product-hidden"
+                   aria-label="Видимість товару">
+        </div>
+        <label for="product-hidden" class="form-control">Створити прихованим</label>
+    </div>
+
+    <div class="input-group mb-3">
+        <span class="input-group-text" id="product-order-addon">Порядок</span>
+        <input type="number" class="form-control" value="100000" step="1"
+               aria-label="Порядок (пріоритет) товару" aria-describedby="product-order-addon"
+               name="product-order" />
+    </div>
+
+    <div class="input-group mb-3">
+        <span class="input-group-text" id="product-id-addon">Товарна версія</span>
+        <input type="text" class="form-control" placeholder="ID товару"
+               aria-label="ID товару" aria-describedby="product-id-addon"
+               name="product-id" />
+    </div>
+
+    <button class="btn btn-primary">Add</button>
+</form>
