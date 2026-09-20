@@ -2,7 +2,10 @@ namespace ASP_P42.Services.Storage
 {
     public class LocalStorageService : IStorageService
     {
-        private readonly String[] allowedExtensions = [".jpg", ".png", ".jpeg", ".webp"];
+        private readonly String[] allowedExtensions = [
+            ".jpg", ".jpeg", ".png", ".gif", ".webp",
+            ".bmp", ".svg", ".ico", ".tiff", ".tif", ".avif"
+        ];
         private readonly String localFolder = "LocalStorage";
 
         public byte[] Load(string filename)
@@ -21,7 +24,7 @@ namespace ASP_P42.Services.Storage
             if (file.Length > 1e7) throw new ArgumentException("File too long");
             int dotPosition = file.FileName.LastIndexOf('.');
             if (dotPosition < 0) throw new ArgumentException("File must have extension");
-            String ext = file.FileName[dotPosition..];
+            String ext = file.FileName[dotPosition..].ToLower();
             if (!allowedExtensions.Contains(ext))
             {
                 throw new ArgumentException("File type not allowed");

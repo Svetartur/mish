@@ -19,6 +19,7 @@ builder.Services.AddDbContext<DataContext>(options =>
         builder.Configuration.GetConnectionString("LocalDB")
     )
 );
+builder.Services.AddScoped<DataAccessor>();
 
 builder.Services.AddDistributedMemoryCache();
 

@@ -14,7 +14,6 @@ namespace ASP_P42.Controllers
     {
         private readonly IHashService _hashService = hashService;
         private readonly IKdfService _kdfService = kdfService;
-        private readonly IConfiguration _configuration = configuration; 
         
 
         public IActionResult IoC()
@@ -32,7 +31,6 @@ namespace ASP_P42.Controllers
         {
             HomeModelsViewModel viewModel = new()
             {
-                pfd 
                 PageTitle = "Моделі в ASP",
                 Intro = "Модель (у MVC) - архітектурна частина проєкту, яка відповідає за \r\n    взаємодію з даними.\r\n    Модель (в ASP) - клас (об'єкт), призначений для передачі даних \r\n    (DTO - Data Transfer Object, Entity)",
                 ClassificationHeader = "Розрізняють декілька типів моделей за призначенням:",

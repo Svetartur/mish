@@ -1,23 +1,17 @@
 using ASP_P42.Data;
 using ASP_P42.Data.Entities;
 using ASP_P42.Models.User;
-using ASP_P42.Services.Kdf;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace ASP_P42.Controllers
 {
-    public class UserController(
-        DataContext dataContext,
-        IKdfService kdfService
-    ) : Controller
+    public class UserController(DataAccessor dataAccessor) : Controller
     {
-        private readonly DataContext _dataContext = dataContext;
-        private readonly IKdfService _kdfService = kdfService;
+        private readonly DataAccessor _dataAccessor = dataAccessor;
 
         public IActionResult SignUp([FromBody] UserSignupFormModel formModel)
         {
@@ -88,33 +82,15 @@ namespace ASP_P42.Controllers
                 return BadRequest(nameof(formModel.Password) + " does not meet complexity requirements (at least 6 chars, with uppercase, lowercase, and digits)");
             }
 
-            if (_dataContext.UserAccesses.Any(ua => ua.Login == formModel.Login))
+            try
             {
-                return BadRequest(nameof(formModel.Login) + $" '{formModel.Login}' is already in use");
+                _dataAccessor.RegisterUser(formModel);
+                return Json(formModel);
             }
-
-            Guid userId = Guid.NewGuid();
-            _dataContext.UsersData.Add(new()
+            catch (Exception ex)
             {
-                Id = userId,
-                FullName = formModel.FullName,
-                Email = formModel.Email,
-                Phone = formModel.Phone,
-                RegisteredAt = DateTime.Now,
-                Birthdate = default,
-            });
-            String salt = Guid.NewGuid().ToString();
-            _dataContext.UserAccesses.Add(new()
-            {
-                Id = Guid.NewGuid(),
-                UserId = userId,
-                RoleId = _dataContext.UserRoles.First(r => r.Name == "User").Id,
-                Login = formModel.Login,
-                Salt = salt,
-                Dk = _kdfService.Dk(formModel.Password, salt),
-            });
-            _dataContext.SaveChanges();
-            return Json(formModel);
+                return BadRequest(ex.Message);
+            }
         }
 
         public IActionResult BasicAuth()
@@ -231,21 +207,7 @@ namespace ASP_P42.Controllers
             String login = parts[0];
             String password = parts[1];
 
-            if (_dataContext
-                .UserAccesses
-                .Include(ua => ua.UserData)
-                .Include(ua => ua.UserRole)
-                .AsNoTracking()
-                .FirstOrDefault(ua => ua.Login == login)
-                is UserAccess userAccess)
-            {
-                String dk = _kdfService.Dk(password, userAccess.Salt);
-                if (dk == userAccess.Dk)
-                {
-                    return userAccess;
-                }
-            }
-            return null;
+            return _dataAccessor.AuthenticateUser(login, password);
         }
     }
 }

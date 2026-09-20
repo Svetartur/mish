@@ -6,10 +6,10 @@ using System.Text.RegularExpressions;
 
 namespace ASP_P42.Controllers
 {
-    public class AdminController(IStorageService storageService, DataContext dataContext) : Controller
+    public class AdminController(IStorageService storageService, DataAccessor dataAccessor) : Controller
     {
         private readonly IStorageService _storageService = storageService;
-        private readonly DataContext _dataContext = dataContext;
+        private readonly DataAccessor _dataAccessor = dataAccessor;
 
         public IActionResult Index()
         {
@@ -20,13 +20,13 @@ namespace ASP_P42.Controllers
         {
             AdminGroupViewModel viewModel = new()
             {
-                Groups = _dataContext.ProductGroups.OrderBy(g => g.OrderInPrice).ToList(),
+                Groups = _dataAccessor.GetAllProductGroups(),
             };
             return View(viewModel);
         }
 
         [HttpPost]
-        public IActionResult AddProduct(AdminAddProductFormModel formModel)
+        public async Task<IActionResult> AddProduct(AdminAddProductFormModel formModel)
         {
             try
             {
@@ -57,10 +57,6 @@ namespace ASP_P42.Controllers
                     {
                         throw new Exception("Product slug must contain only lowercase letters, digits, and hyphens");
                     }
-                    if (_dataContext.Products.Any(p => p.Slug == formModel.Slug))
-                    {
-                        throw new Exception($"Product slug '{formModel.Slug}' is already in use");
-                    }
                 }
 
                 if (formModel.Stock < -1)
@@ -73,50 +69,15 @@ namespace ASP_P42.Controllers
                     throw new Exception("Product price must be greater than or equal to 0.01");
                 }
 
-                Data.Entities.ProductGroup group = _dataContext
-                    .ProductGroups
-                    .FirstOrDefault(g => g.Id == formModel.GroupId)
-                ?? throw new Exception($"Group not found with id='{formModel.GroupId}'");
+                await _dataAccessor.IsProductFormModelValidAsync(formModel);
 
-                if (formModel.ProductId != null)
+                String? imageUrl = null;
+                if (formModel.Image != null)
                 {
-                    Data.Entities.Product product = _dataContext
-                        .Products
-                        .FirstOrDefault(p => p.Id == formModel.ProductId) 
-                    ?? throw new Exception($"Product not found with id='{formModel.ProductId}'");
+                    imageUrl = _storageService.Save(formModel.Image);
                 }
-                else
-                {
-                    String? imageUrl = null;
-                    if (formModel.Image != null)
-                    {
-                        imageUrl = _storageService.Save(formModel.Image);
-                    }
-                    Guid productId = Guid.NewGuid();
-                    _dataContext.Products.Add(new()
-                    {
-                        Id = productId,
-                        GroupId = group.Id,
-                        Name = formModel.Name,
-                        Description = formModel.Description,
-                        ImageUrl = imageUrl,
-                        IsHidden = formModel.IsHidden,
-                        OrderInPrice = formModel.Order,
-                        Slug = formModel.Slug,
-                    });
-                    _dataContext.ProductVersions.Add(new()
-                    {
-                        Id = Guid.NewGuid(),
-                        ProductId = productId,
-                        ImageUrl = imageUrl,
-                        Price = (decimal)formModel.Price,
-                        Stock = formModel.Stock,
-                        OrderInPrice = 1,
-                        Slug = formModel.Slug,
-                        IsHidden = formModel.IsHidden,                        
-                    });
-                    _dataContext.SaveChanges();
-                }
+
+                await _dataAccessor.AddNewProduct(formModel, imageUrl);
                 return Ok();
             }
             catch (Exception ex)
@@ -129,13 +90,13 @@ namespace ASP_P42.Controllers
         {
             AdminGroupViewModel viewModel = new()
             {
-                Groups = _dataContext.ProductGroups.OrderBy(g => g.OrderInPrice).ToList(),
+                Groups = _dataAccessor.GetAllProductGroups(),
             };
             return View(viewModel);
         }
 
         [HttpPost]
-        public IActionResult AddGroup(AdminAddGroupFormModel formModel)
+        public async Task<IActionResult> AddGroup(AdminAddGroupFormModel formModel)
         {
             try
             {
@@ -168,22 +129,27 @@ namespace ASP_P42.Controllers
                 {
                     throw new Exception("Group slug must contain only lowercase letters, digits, and hyphens");
                 }
-                if (_dataContext.ProductGroups.Any(g => g.Slug == formModel.Slug))
+                if ((await _dataAccessor.GetProductGroupBySlug(formModel.Slug)) != null)
                 {
                     throw new Exception($"Group slug '{formModel.Slug}' is already in use");
                 }
 
-                _dataContext.ProductGroups.Add(new()
+                String? imageUrl = null;
+                if (formModel.Image != null)
                 {
-                    Id = Guid.NewGuid(),
+                    imageUrl = "/storage/image/" + _storageService.Save(formModel.Image);
+                }
+
+                await _dataAccessor.AddNewProductGroup(new()
+                {
                     ParentId = formModel.ParentId,
                     Name = formModel.Name,
                     Description = formModel.Description,
                     Slug = formModel.Slug,
                     IsHidden = formModel.IsHidden,
-                    ImageUrl = "/storage/image/" + _storageService.Save(formModel.Image)
+                    OrderInPrice = formModel.Order,
+                    ImageUrl = imageUrl ?? ""
                 });
-                _dataContext.SaveChanges();
                 return Ok();
             }
             catch (Exception ex)
