@@ -22,7 +22,7 @@ namespace ASP_P42.Middleware.AuthSession
                 return;
             }
 
-            context.Items.Add("itemKey", "Item Value");
+            context.Items["itemKey"] = "Item Value";
 
             if (context.Session.Keys.Contains(authKey))
             {

@@ -3,6 +3,8 @@ using ASP_P42.Models.Admin;
 using ASP_P42.Models.User;
 using ASP_P42.Services.Kdf;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace ASP_P42.Data
 {
@@ -11,21 +13,16 @@ namespace ASP_P42.Data
         private readonly DataContext _dataContext = dataContext;
         private readonly IKdfService _kdfService = kdfService;
 
-        public Guid GetDbIdentity()
+        public async Task<Guid> GetDbIdentityAsync()
         {
-            try
-            {
-                return _dataContext.Database.SqlQuery<Guid>($"SELECT NEWID() AS [Value]").AsEnumerable().First();
-            }
-            catch
-            {
-                return Guid.NewGuid();
-            }
+            return await _dataContext.Database
+                .SqlQuery<Guid>($"SELECT NEWID() AS Value")
+                .SingleAsync();
         }
 
         public List<Entities.ProductGroup> GetAllProductGroups(bool isIncludeHidden = false)
         {
-            IQueryable<Entities.ProductGroup> query = _dataContext.ProductGroups;
+            IQueryable<Entities.ProductGroup> query = _dataContext.ProductGroups.AsNoTracking();
             if (!isIncludeHidden)
             {
                 query = query.Where(g => g.IsHidden == 0);
@@ -35,17 +32,17 @@ namespace ASP_P42.Data
 
         public async Task<Entities.ProductGroup?> GetProductGroupById(Guid guid)
         {
-            return await _dataContext.ProductGroups.FirstOrDefaultAsync(g => g.Id == guid);
+            return await _dataContext.ProductGroups.AsNoTracking().FirstOrDefaultAsync(g => g.Id == guid);
         }
 
         public async Task<Entities.ProductGroup?> GetProductGroupBySlug(string slug)
         {
-            return await _dataContext.ProductGroups.FirstOrDefaultAsync(g => g.Slug == slug);
+            return await _dataContext.ProductGroups.AsNoTracking().FirstOrDefaultAsync(g => g.Slug == slug);
         }
 
         public async Task<Guid> AddNewProductGroup(Entities.ProductGroup productGroup)
         {
-            Guid id = GetDbIdentity();
+            Guid id = await GetDbIdentityAsync();
             productGroup.Id = id;
             _dataContext.ProductGroups.Add(productGroup);
             await _dataContext.SaveChangesAsync();
@@ -60,10 +57,13 @@ namespace ASP_P42.Data
             existing.Name = productGroup.Name;
             existing.Description = productGroup.Description;
             existing.Slug = productGroup.Slug;
-            existing.ImageUrl = productGroup.ImageUrl;
             existing.IsHidden = productGroup.IsHidden;
             existing.OrderInPrice = productGroup.OrderInPrice;
             existing.ParentId = productGroup.ParentId;
+            if (!string.IsNullOrEmpty(productGroup.ImageUrl))
+            {
+                existing.ImageUrl = productGroup.ImageUrl;
+            }
 
             await _dataContext.SaveChangesAsync();
             return true;
@@ -74,14 +74,14 @@ namespace ASP_P42.Data
             var existing = await _dataContext.ProductGroups.FindAsync(id);
             if (existing == null) return false;
 
-            _dataContext.ProductGroups.Remove(existing);
+            existing.IsHidden = 1;
             await _dataContext.SaveChangesAsync();
             return true;
         }
 
         public async Task<Guid> AddNewProduct(AdminAddProductFormModel formModel, String? imageUrl)
         {
-            Guid id = GetDbIdentity();
+            Guid id = await GetDbIdentityAsync();
             if (formModel.ProductId != null)
             {
                 _dataContext.ProductVersions.Add(new()
@@ -100,7 +100,7 @@ namespace ASP_P42.Data
             else
             {
                 Entities.ProductGroup group = (await GetProductGroupById(formModel.GroupId))!;
-                Guid productId = GetDbIdentity();
+                Guid productId = await GetDbIdentityAsync();
                 _dataContext.Products.Add(new()
                 {
                     Id = productId,
@@ -140,7 +140,7 @@ namespace ASP_P42.Data
             }
             if (formModel.Slug != null)
             {
-                if (_dataContext.Products.Any(p => p.Slug == formModel.Slug))
+                if (_dataContext.Products.AsNoTracking().Any(p => p.Slug == formModel.Slug))
                 {
                     throw new Exception($"Slug '{formModel.Slug}' is already in use by other product");
                 }
@@ -150,36 +150,51 @@ namespace ASP_P42.Data
 
         public async Task<Entities.Product?> GetProductById(Guid guid)
         {
-            return await _dataContext.Products.FirstOrDefaultAsync(p => p.Id == guid);
+            return await _dataContext.Products.AsNoTracking().FirstOrDefaultAsync(p => p.Id == guid);
         }
 
-        public UserAccess? AuthenticateUser(string login, string password)
+        public async Task<UserAccess?> AuthenticateUserAsync(string login, string password)
         {
-            if (_dataContext
+            UserAccess? userAccess = await _dataContext
                 .UserAccesses
                 .Include(ua => ua.UserData)
                 .Include(ua => ua.UserRole)
                 .AsNoTracking()
-                .FirstOrDefault(ua => ua.Login == login)
-                is UserAccess userAccess)
+                .FirstOrDefaultAsync(ua => ua.Login == login);
+
+            String? candidateDk = null;
+            bool isOk = false;
+            if (userAccess != null)
             {
-                String dk = _kdfService.Dk(password, userAccess.Salt);
-                if (dk == userAccess.Dk)
-                {
-                    return userAccess;
-                }
+                candidateDk = _kdfService.Dk(password, userAccess.Salt);
+                isOk = CryptographicOperations.FixedTimeEquals(
+                    Encoding.UTF8.GetBytes(candidateDk),
+                    Encoding.UTF8.GetBytes(userAccess.Dk));
             }
-            return null;
+
+            _dataContext.AuthJournals.Add(new()
+            {
+                Id = Guid.NewGuid(),
+                DateTime = DateTime.UtcNow,
+                Login = login,
+                Dk = candidateDk == null
+                    ? String.Empty
+                    : Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(candidateDk))),
+                IsOk = isOk,
+            });
+            await _dataContext.SaveChangesAsync();
+
+            return isOk ? userAccess : null;
         }
 
-        public UserAccess RegisterUser(UserSignupFormModel formModel)
+        public async Task<UserAccess> RegisterUserAsync(UserSignupFormModel formModel)
         {
-            if (_dataContext.UserAccesses.Any(ua => ua.Login == formModel.Login))
+            if (await _dataContext.UserAccesses.AsNoTracking().AnyAsync(ua => ua.Login == formModel.Login))
             {
                 throw new Exception($"Login '{formModel.Login}' is already in use");
             }
 
-            Guid userId = GetDbIdentity();
+            Guid userId = await GetDbIdentityAsync();
             UserData userData = new()
             {
                 Id = userId,
@@ -189,21 +204,22 @@ namespace ASP_P42.Data
                 RegisteredAt = DateTime.Now,
                 Birthdate = default,
             };
-            _dataContext.UsersData.Add(userData);
-
             String salt = Guid.NewGuid().ToString();
             UserAccess userAccess = new()
             {
-                Id = GetDbIdentity(),
+                Id = await GetDbIdentityAsync(),
                 UserId = userId,
-                RoleId = _dataContext.UserRoles.First(r => r.Name == "User").Id,
+                RoleId = await _dataContext.UserRoles
+                    .Where(r => r.Name == "User")
+                    .Select(r => r.Id)
+                    .FirstAsync(),
                 Login = formModel.Login,
                 Salt = salt,
                 Dk = _kdfService.Dk(formModel.Password, salt),
                 UserData = userData,
             };
             _dataContext.UserAccesses.Add(userAccess);
-            _dataContext.SaveChanges();
+            await _dataContext.SaveChangesAsync();
 
             return userAccess;
         }

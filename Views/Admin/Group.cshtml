@@ -3,59 +3,160 @@
     ViewData["Title"] = "Admin Page";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Admin Page: Add product group</h1>
+<div class="text-center mb-4">
+    <h1 class="display-5 fw-bold">Панель адміністратора: Товарні групи</h1>
 </div>
 
-<form id="admin-add-group" enctype="multipart/form-data" method="post">
-
-    <div class="input-group mb-3">
-        <label class="input-group-text" for="group-parent">Батьківська група</label>
-        <select class="form-select" id="group-parent" name="group-parent">
-            <option selected>Вищій рівень</option>
-            @foreach(var group in Model.Groups)
-            {
-                <option value="@group.Id" title="@group.Description">@group.Name</option>
-            }
-        </select>
+<div class="card shadow-sm mb-5">
+    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+        <h4 class="m-0 fs-5">Перелік наявних товарних груп</h4>
+        <span class="badge bg-light text-dark">Всього: @Model.Groups.Count</span>
     </div>
-
-    <div class="input-group mb-3">
-        <span class="input-group-text" id="group-name-addon">Назва</span>
-        <input type="text" class="form-control" placeholder="Ім'я товарної групи" 
-               aria-label="Ім'я товарної групи" aria-describedby="group-name-addon"
-               name="group-name" />
-    </div>
-
-    <div class="input-group mb-3">
-        <span class="input-group-text">Опис</span>
-        <textarea class="form-control" name="group-description" aria-label="Опис товарної групи"></textarea>
-    </div>
-
-    <div class="input-group mb-3">
-        <span class="input-group-text" id="group-slug-addon">Назва</span>
-        <input type="text" class="form-control" placeholder="Адреса товарної групи"
-               aria-label="Адреса товарної групи" aria-describedby="group-slug-addon"
-               name="group-slug" />
-    </div>
-
-    <input type="file" class="form-control mb-3" name="group-img" />
-
-    <div class="input-group mb-3">
-        <div class="input-group-text">
-            <input class="form-check-input mt-0" type="checkbox" value="1" 
-                   name="group-hidden" id="group-hidden"
-                   aria-label="Видимість групи">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover align-middle m-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 70px;" class="text-center">Лого</th>
+                        <th>Назва</th>
+                        <th>Slug</th>
+                        <th>Опис</th>
+                        <th style="width: 90px;" class="text-center">Порядок</th>
+                        <th style="width: 120px;" class="text-center">Статус</th>
+                        <th style="width: 200px;" class="text-center">Дії</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Groups.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-4">Товарних груп поки немає</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var group in Model.Groups)
+                        {
+                            bool isDeleted = group.IsHidden != 0;
+                            <tr class="@(isDeleted ? "table-secondary opacity-75" : "")" id="group-row-@group.Id">
+                                <td class="text-center p-2">
+                                    @if (!string.IsNullOrEmpty(group.ImageUrl))
+                                    {
+                                        <img src="@group.ImageUrl" alt="@group.Name" style="width: 45px; height: 45px; object-fit: cover;" class="rounded border shadow-sm" />
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-light text-secondary border">Немає</span>
+                                    }
+                                </td>
+                                <td class="fw-semibold text-dark">@group.Name</td>
+                                <td><code>@group.Slug</code></td>
+                                <td class="small text-secondary">@group.Description</td>
+                                <td class="text-center fw-bold">@group.OrderInPrice</td>
+                                <td class="text-center">
+                                    @if (isDeleted)
+                                    {
+                                        <span class="badge bg-secondary">Неактивна (Видалена)</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-success">Активна</span>
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    <button type="button" class="btn btn-sm btn-outline-primary me-1 btn-edit-group"
+                                            data-id="@group.Id"
+                                            data-parent-id="@(group.ParentId.HasValue ? group.ParentId.Value.ToString() : "")"
+                                            data-name="@group.Name"
+                                            data-description="@group.Description"
+                                            data-slug="@group.Slug"
+                                            data-hidden="@group.IsHidden"
+                                            data-order="@group.OrderInPrice">
+                                        <i class="bi bi-pencil"></i> Редагувати
+                                    </button>
+                                    @if (!isDeleted)
+                                    {
+                                        <button type="button" class="btn btn-sm btn-outline-danger btn-delete-group" data-id="@group.Id" data-name="@group.Name">
+                                            <i class="bi bi-trash"></i> Видалити
+                                        </button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
         </div>
-        <label for="group-hidden" class="form-control">Створити прихованою</label>
     </div>
+</div>
 
-    <div class="input-group mb-3">
-        <span class="input-group-text" id="group-order-addon">Порядок</span>
-        <input type="number" class="form-control" value="@(Model.Groups.Count + 1)" step="1"
-               aria-label="Порядок (пріоритет) групи" aria-describedby="group-order-addon"
-               name="group-order" />
+<div class="card shadow-sm border-primary">
+    <div class="card-header bg-primary text-white">
+        <h4 class="m-0 fs-5" id="form-title">Додати нову товарну групу</h4>
     </div>
+    <div class="card-body">
+        <form id="admin-add-group" enctype="multipart/form-data" method="post">
+            <input type="hidden" name="group-id" id="group-id" value="" />
 
-    <button class="btn btn-primary">Add</button>
-</form>
+            <div class="input-group mb-3">
+                <label class="input-group-text fw-medium" for="group-parent">Батьківська група</label>
+                <select class="form-select" id="group-parent" name="group-parent">
+                    <option value="" selected>Вищий рівень</option>
+                    @foreach (var group in Model.Groups)
+                    {
+                        <option value="@group.Id" title="@group.Description">@group.Name</option>
+                    }
+                </select>
+            </div>
+
+            <div class="input-group mb-3">
+                <span class="input-group-text fw-medium" id="group-name-addon">Назва</span>
+                <input type="text" class="form-control" placeholder="Ім'я товарної групи" 
+                       aria-label="Ім'я товарної групи" aria-describedby="group-name-addon"
+                       name="group-name" id="group-name" />
+            </div>
+
+            <div class="input-group mb-3">
+                <span class="input-group-text fw-medium">Опис</span>
+                <textarea class="form-control" name="group-description" id="group-description" aria-label="Опис товарної групи" rows="3"></textarea>
+            </div>
+
+            <div class="input-group mb-3">
+                <span class="input-group-text fw-medium" id="group-slug-addon">Slug</span>
+                <input type="text" class="form-control" placeholder="Адреса товарної групи (наприклад, gaming-laptops)"
+                       aria-label="Адреса товарної групи" aria-describedby="group-slug-addon"
+                       name="group-slug" id="group-slug" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-medium">Зображення групи</label>
+                <input type="file" class="form-control" name="group-img" id="group-img" />
+            </div>
+
+            <div class="input-group mb-3">
+                <div class="input-group-text">
+                    <input class="form-check-input mt-0" type="checkbox" value="1" 
+                           name="group-hidden" id="group-hidden"
+                           aria-label="Видимість групи">
+                </div>
+                <label for="group-hidden" class="form-control cursor-pointer">Створити прихованою (неактивною)</label>
+            </div>
+
+            <div class="input-group mb-4">
+                <span class="input-group-text fw-medium" id="group-order-addon">Порядок</span>
+                <input type="number" class="form-control" value="@(Model.Groups.Count + 1)" step="1"
+                       aria-label="Порядок (пріоритет) групи" aria-describedby="group-order-addon"
+                       name="group-order" id="group-order" />
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary px-4 fw-semibold" id="btn-submit-group">
+                    <i class="bi bi-plus-lg me-1"></i>Додати
+                </button>
+                <button type="button" class="btn btn-secondary px-4 d-none" id="btn-cancel-edit">
+                    Скасувати
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

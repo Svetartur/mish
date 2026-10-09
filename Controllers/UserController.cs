@@ -13,7 +13,7 @@ namespace ASP_P42.Controllers
     {
         private readonly DataAccessor _dataAccessor = dataAccessor;
 
-        public IActionResult SignUp([FromBody] UserSignupFormModel formModel)
+        public async Task<IActionResult> SignUp([FromBody] UserSignupFormModel formModel)
         {
             if (formModel == null)
             {
@@ -84,8 +84,14 @@ namespace ASP_P42.Controllers
 
             try
             {
-                _dataAccessor.RegisterUser(formModel);
-                return Json(formModel);
+                await _dataAccessor.RegisterUserAsync(formModel);
+                return Json(new
+                {
+                    formModel.Login,
+                    formModel.FullName,
+                    formModel.Email,
+                    formModel.Phone,
+                });
             }
             catch (Exception ex)
             {
@@ -93,12 +99,12 @@ namespace ASP_P42.Controllers
             }
         }
 
-        public IActionResult BasicAuth()
+        public async Task<IActionResult> BasicAuth()
         {
             UserAccess? userAccess;
             try
             {
-                userAccess = AuthenticateUser();
+                userAccess = await AuthenticateUserAsync();
             }
             catch (Exception ex)
             {
@@ -117,12 +123,12 @@ namespace ASP_P42.Controllers
             return Ok();
         }
 
-        public IActionResult BasicAuthJwt()
+        public async Task<IActionResult> BasicAuthJwt()
         {
             UserAccess? userAccess;
             try
             {
-                userAccess = AuthenticateUser();
+                userAccess = await AuthenticateUserAsync();
             }
             catch (Exception ex)
             {
@@ -165,7 +171,7 @@ namespace ASP_P42.Controllers
             return Ok(body + "." + signature);
         }
 
-        private UserAccess? AuthenticateUser()
+        private async Task<UserAccess?> AuthenticateUserAsync()
         {
             String authHeader = HttpContext.Request.Headers.Authorization.ToString();
             if (authHeader == String.Empty)
@@ -207,7 +213,7 @@ namespace ASP_P42.Controllers
             String login = parts[0];
             String password = parts[1];
 
-            return _dataAccessor.AuthenticateUser(login, password);
+            return await _dataAccessor.AuthenticateUserAsync(login, password);
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿@model ASP_P42.Models.Home.Models.HomeModelsFormModel
+@model ASP_P42.Models.Home.Models.HomeModelsFormModel
 
 @{
     ViewData["Title"] = "Form Models";
@@ -8,4 +8,25 @@
     <h1 class="display-4">Прийом даних форм</h1>
 </div>
 
-@Html.DisplayFor(m => Model)
+<dl class="row">
+    <dt class="col-sm-3">Логін</dt>
+    <dd class="col-sm-9">@Model.UserLogin</dd>
+
+    <dt class="col-sm-3">Пароль</dt>
+    <dd class="col-sm-9">@(String.IsNullOrEmpty(Model.UserPassword) ? "Не вказаний" : "Введений (значення не показується)")</dd>
+
+    <dt class="col-sm-3">Підписка</dt>
+    <dd class="col-sm-9">@(Model.Subscribe ? "Так" : "Ні")</dd>
+
+    <dt class="col-sm-3">Стать</dt>
+    <dd class="col-sm-9">@(String.IsNullOrEmpty(Model.Gender) ? "Не вказана" : Model.Gender)</dd>
+
+    <dt class="col-sm-3">Дата народження</dt>
+    <dd class="col-sm-9">@(Model.BirthDate == default ? "Не вказана" : Model.BirthDate.ToString("yyyy-MM-dd"))</dd>
+
+    <dt class="col-sm-3">Улюблений колір</dt>
+    <dd class="col-sm-9">@Model.FavoriteColor</dd>
+
+    <dt class="col-sm-3">Оцінка</dt>
+    <dd class="col-sm-9">@Model.Score</dd>
+</dl>

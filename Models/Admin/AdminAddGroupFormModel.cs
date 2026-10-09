@@ -4,6 +4,9 @@ namespace ASP_P42.Models.Admin
 {
     public class AdminAddGroupFormModel
     {
+        [FromForm(Name = "group-id")]
+        public Guid? Id { get; set; }
+
         [FromForm(Name = "group-parent")]
         public Guid? ParentId { get; set; } = null!;
         
@@ -17,7 +20,7 @@ namespace ASP_P42.Models.Admin
         public String Slug { get; set; } = null!;
 
         [FromForm(Name = "group-img")]
-        public IFormFile Image { get; set; } = null!;
+        public IFormFile? Image { get; set; }
 
         [FromForm(Name = "group-hidden")]
         public int IsHidden { get; set; } = 0;

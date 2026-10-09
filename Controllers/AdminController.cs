@@ -90,7 +90,7 @@ namespace ASP_P42.Controllers
         {
             AdminGroupViewModel viewModel = new()
             {
-                Groups = _dataAccessor.GetAllProductGroups(),
+                Groups = _dataAccessor.GetAllProductGroups(isIncludeHidden: true),
             };
             return View(viewModel);
         }
@@ -129,7 +129,9 @@ namespace ASP_P42.Controllers
                 {
                     throw new Exception("Group slug must contain only lowercase letters, digits, and hyphens");
                 }
-                if ((await _dataAccessor.GetProductGroupBySlug(formModel.Slug)) != null)
+
+                var existingWithSlug = await _dataAccessor.GetProductGroupBySlug(formModel.Slug);
+                if (existingWithSlug != null && (formModel.Id == null || existingWithSlug.Id != formModel.Id))
                 {
                     throw new Exception($"Group slug '{formModel.Slug}' is already in use");
                 }
@@ -140,16 +142,59 @@ namespace ASP_P42.Controllers
                     imageUrl = "/storage/image/" + _storageService.Save(formModel.Image);
                 }
 
-                await _dataAccessor.AddNewProductGroup(new()
+                if (formModel.Id != null && formModel.Id != Guid.Empty)
                 {
-                    ParentId = formModel.ParentId,
-                    Name = formModel.Name,
-                    Description = formModel.Description,
-                    Slug = formModel.Slug,
-                    IsHidden = formModel.IsHidden,
-                    OrderInPrice = formModel.Order,
-                    ImageUrl = imageUrl ?? ""
-                });
+                    var existingGroup = await _dataAccessor.GetProductGroupById(formModel.Id.Value);
+                    if (existingGroup == null)
+                    {
+                        throw new Exception("Group to update not found");
+                    }
+
+                    existingGroup.ParentId = formModel.ParentId;
+                    existingGroup.Name = formModel.Name;
+                    existingGroup.Description = formModel.Description;
+                    existingGroup.Slug = formModel.Slug;
+                    existingGroup.IsHidden = formModel.IsHidden;
+                    existingGroup.OrderInPrice = formModel.Order;
+                    if (!String.IsNullOrEmpty(imageUrl))
+                    {
+                        existingGroup.ImageUrl = imageUrl;
+                    }
+
+                    await _dataAccessor.UpdateProductGroup(existingGroup);
+                }
+                else
+                {
+                    await _dataAccessor.AddNewProductGroup(new()
+                    {
+                        ParentId = formModel.ParentId,
+                        Name = formModel.Name,
+                        Description = formModel.Description,
+                        Slug = formModel.Slug,
+                        IsHidden = formModel.IsHidden,
+                        OrderInPrice = formModel.Order,
+                        ImageUrl = imageUrl ?? ""
+                    });
+                }
+
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> DeleteGroup([FromForm] Guid id)
+        {
+            try
+            {
+                bool success = await _dataAccessor.DeleteProductGroup(id);
+                if (!success)
+                {
+                    return NotFound("Group not found");
+                }
                 return Ok();
             }
             catch (Exception ex)

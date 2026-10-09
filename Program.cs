@@ -16,7 +16,8 @@ builder.Services.AddStorage();
 
 builder.Services.AddDbContext<DataContext>(options => 
     options.UseSqlServer(
-        builder.Configuration.GetConnectionString("LocalDB")
+        builder.Configuration.GetConnectionString("LocalDB"),
+        sqlOptions => sqlOptions.EnableRetryOnFailure()
     )
 );
 builder.Services.AddScoped<DataAccessor>();
